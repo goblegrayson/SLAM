@@ -4,12 +4,13 @@
 
 int main() {
     // Model inputs
-    float pressure_altitude_ft = 45000;
-    float calibrated_airspeed_kt = 278.787;
+    double altitude_msl_ft = 50000;
+    double mach = 1.8;
+    //double mach = 0.5;
     // Initialize Model
     Simulation Sim;
-    Sim.initial_state.PressureAltitude_ft = pressure_altitude_ft;
-    Sim.initial_state.CalibratedAirspeed_kt = calibrated_airspeed_kt;
+    Sim.initial_state.AltitudeMeanSeaLevel_ft = altitude_msl_ft;
+    Sim.initial_state.MachNumber = mach;
     // Run Model
     Sim.run(1);
     // Output State History

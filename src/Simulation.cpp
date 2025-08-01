@@ -37,13 +37,13 @@ void Simulation::toCSV(const std::string& filename) {
     }
 
     // Write header row (column names)
-    file << "PressureAltitude_ft,CalibratedAirspeed_kt,Time_sec\n";
+    file << "AltitudeMeanSeaLevel_ft,MachNumber,Time_sec\n";
 
     // Write data rows
 	for (int i_frame = 0; i_frame < state_history.size() - 1; i_frame++) {
 		State state = state_history[i_frame];
-        file << state.PressureAltitude_ft << ","
-            << state.CalibratedAirspeed_kt << ","
+        file << state.AltitudeMeanSeaLevel_ft << ","
+            << state.MachNumber << ","
             << state.Time_sec << "\n";
     }
 
