@@ -39,3 +39,14 @@
 
 # debug information files
 *.dwo
+.vs
+/SLAM.vcxproj.filters
+/SLAM.vcxproj.user
+/x64
+
+*.suo
+*.user
+*.ncb
+Debug/
+Release/
+CodeAnalyst/
