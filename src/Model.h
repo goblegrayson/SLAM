@@ -1,4 +1,5 @@
 #pragma once
+#define _USE_MATH_DEFINES
 #include <cmath>
 #include "USSA.h"
 
@@ -10,6 +11,14 @@ struct State {
 	double ReferenceSpan_ft = 21.94;
 	double SpeedOfSound_SeaLevel_fps = 661.47 * 1.688;
 	double StaticPressure_SeaLevel_psf = 2116.23 ;
+	double ThrustLimit_lbs = 15600;
+	double StabLimit_deg = 10; // Just a guess
+	double AilerontLimit_deg = 10; // Just a guess
+	// Controls
+	double PitchStick_norm = 0; // 1 full is nose up, -1 is full now down
+	double RollStick_norm = 0; // 1 full is right wing down, -1 is full left wing down
+	double StabPosition_deg = 0;
+	double AileronPosition_deg = 0;
 	// Mass Properties
 	double AircraftWeight_lbs = 16300;
 	double CGx_pct = 7;
@@ -35,11 +44,14 @@ struct State {
 	double DynamicPressure_psf = 0;
 	double TotalPressure_psf = 0;
 	// Aero Angles
-	double AngleOfAttack_deg = 0;
-	double AngleOfSideslip_deg = 0;
+	double Alpha_deg = 0;
+	double Alpha_dot_dps = 0;
+	double Beta_deg = 0;
+	double Beta_dot_dps = 0;
+	double Gamma_deg = 0;
 	// Lon Aero
-	double CL = 0.2;
-	double CD = 0.055;
+	double CL0 = 0.2;
+	double CD0 = 0.055;
 	double CL_alpha = 2;
 	double CD_alpha = 0.38;
 	double CM_alpha = -1.3;
@@ -47,11 +59,11 @@ struct State {
 	double CM_alpha_dot = -2;
 	double CL_q = 0;
 	double CM_q = -4.8;
-	double CL_m = -0.2;
+	double CL_m = -0.2; // This is probably unreasonable for low speeds
 	double CD_m = 0;
 	double CM_m = -0.01;
-	double CL_Delta_Elevator = 0.52;
-	double CM_Delta_Elevator = -0.1;
+	double CL_delta_stab = 0.52;
+	double CM_delta_stab = -0.1;
 	// Lat-Dir Aero - Note the distinction between CL (Lift Coefficient) and Cl (Rolling Moment Coefficient)
 	double CY_b = -1;
 	double Cl_b = -0.09;
@@ -66,6 +78,35 @@ struct State {
 	double CY_delta_r = 0.05;
 	double Cl_delta_r = 0.008;
 	double CN_delta_r = -0.04;
+	// Propulsion
+	double Throttle_norm = 0;
+	double Thrust_lb = 0;
+	// Forces
+	double Lon_FX_lbs = 0;
+	double Lon_FY_lbs = 0;
+	double Lon_FZ_lbs = 0;
+	double LatDir_FX_lbs = 0;
+	double LatDir_FY_lbs = 0;
+	double LatDir_FZ_lbs = 0;
+	double Propulsion_FX_lbs = 0;
+	double Propulsion_FY_lbs = 0;
+	double Propulsion_FZ_lbs = 0;
+	double FX_lbs = 0;
+	double FY_lbs = 0;
+	double FZ_lbs = 0;
+	// Moments 
+	double Lon_MX_lbs = 0;
+	double Lon_MY_lbs = 0;
+	double Lon_MZ_lbs = 0;
+	double LatDir_MX_lbs = 0;
+	double LatDir_MY_lbs = 0;
+	double LatDir_MZ_lbs = 0;
+	double Propulsion_MX_lbs = 0;
+	double Propulsion_MY_lbs = 0;
+	double Propulsion_MZ_lbs = 0;
+	double MX_lbs = 0;
+	double MY_lbs = 0;
+	double MZ_lbs = 0;
 	// Rates
 	double U_dot_fps2 = 0;
 	double V_dot_fps2 = 0;
@@ -76,6 +117,7 @@ struct State {
 	double Phi_dot_dps = 0;
 	double Theta_dot_dps = 0;
 	double Psi_dot_dps = 0;
+	double Altitude_dot_fps = 0;
 	// Integrated States
 	double U_fps = 0;
 	double V_fps = 0;
@@ -83,11 +125,11 @@ struct State {
 	double P_dps = 0;
 	double Q_dps = 0;
 	double R_dps = 0;
-	double Phi_d = 0;
-	double Theta_d = 0;
-	double Psi_d = 0;
+	double Phi_deg = 0;
+	double Theta_deg = 0;
+	double Psi_deg = 0;
 	// Simulation
-	double Time_sec;
+	double Time_sec = 0;
 };
 
 
@@ -102,6 +144,8 @@ class Model{
 		// Model Methods
 		Model();
 		State GetDefaultInitialState();
+		State SetAltitude(State state, double altitude_msl_ft);
+		State SetMach(State state, double mach);
 		State Step(State state);
 		// Component Models
 		State Atmosphere(State state);

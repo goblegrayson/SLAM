@@ -17,7 +17,7 @@ class Simulation{
 	public:
 		Simulation();
 		void printTimestep();
-		void run(float maxTime);
+		void run(double maxTime);
 		void toCSV(const std::string& filename);
 };
 

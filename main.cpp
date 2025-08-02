@@ -4,15 +4,19 @@
 
 int main() {
     // Model inputs
-    double altitude_msl_ft = 50000;
+    double max_time = 360;
+    double altitude_msl_ft = 55000;
     double mach = 1.8;
     //double mach = 0.5;
     // Initialize Model
     Simulation Sim;
-    Sim.initial_state.AltitudeMeanSeaLevel_ft = altitude_msl_ft;
-    Sim.initial_state.MachNumber = mach;
+    Sim.initial_state = Sim.model.SetAltitude(Sim.initial_state, altitude_msl_ft);
+    Sim.initial_state = Sim.model.SetMach(Sim.initial_state, mach);
+    // Try and trim this thing out a bit
+    Sim.initial_state.Throttle_norm = 0.8;
+    Sim.initial_state.PitchStick_norm = 0.3;
     // Run Model
-    Sim.run(1);
+    Sim.run(max_time);
     // Output State History
     Sim.toCSV("StateHistory.csv");
     return 0;
