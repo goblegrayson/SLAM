@@ -151,11 +151,11 @@ State Model::LonAero(State state) {
 	double alpha_dot_rps = state.Alpha_dot_dps * M_PI / 180.0;
 	double beta_dot_rps = state.Beta_dot_dps * M_PI / 180.0;
 	// Stab position
-	double stab_rad = state.StabPosition_deg * M_PI / 180.0;
+	double stab_rad = state.StabCommand_deg * M_PI / 180.0;
 	// CL
 	double CL_Total = state.CL0;
 	CL_Total += state.CL_alpha * alpha_rad;
-	CL_Total += state.CL_alpha_dot * alpha_dot_rps * state.ReferenceChord_ft / (2 * state.TrueAirspeed_fps);
+	CL_Total += state.CL_alpha_dot * alpha_dot_rps * state.ReferenceChord_ft / (2.0 * state.TrueAirspeed_fps);
 	CL_Total += state.CL_q * q_rad * state.ReferenceChord_ft / (2 * state.TrueAirspeed_fps);
 	CL_Total += state.CL_m * state.MachNumber;
 	CL_Total += state.CL_delta_stab * stab_rad;
@@ -166,7 +166,7 @@ State Model::LonAero(State state) {
 	// CM
 	double CM_Total = state.CM0;
 	CM_Total += state.CM_alpha * alpha_rad;
-	CM_Total += state.CM_alpha_dot * alpha_dot_rps * state.ReferenceChord_ft / (2 * state.TrueAirspeed_fps);
+	CM_Total += state.CM_alpha_dot * alpha_dot_rps * state.ReferenceChord_ft / (2.0 * state.TrueAirspeed_fps);
 	CM_Total += state.CM_q * q_rad * state.ReferenceChord_ft / (2 * state.TrueAirspeed_fps);
 	CM_Total += state.CM_m * state.MachNumber * std::min(std::max((state.MachNumber - 0.8), 0.0), 1.0); // Fade this below transonic
 	CM_Total += state.CM_delta_stab * stab_rad;
@@ -184,14 +184,46 @@ State Model::LonAero(State state) {
 
 
 State Model::LatDirAero(State state) {
-	// Sum of Forces
+	// Convert angles and rates to radians
+	double beta_rad = state.Beta_deg * M_PI / 180.0;
+	double alpha_rad = state.Alpha_deg * M_PI / 180.0;
+	double p_rad = state.P_dps * M_PI / 180.0;
+	double r_rad = state.R_dps * M_PI / 180.0;
+	double aileron_rad = state.AileronCommand_deg * M_PI / 180.0;
+	double rudder_rad = state.RudderCommand_deg * M_PI / 180.0;
+
+	// Span and airspeed from state
+	double b_ft = state.ReferenceSpan_ft;
+	double V_fps = state.TrueAirspeed_fps;
+
+	// CY (Side force coefficient)
+	double CY_Total = state.CY_b * beta_rad;
+	CY_Total += state.CY_rud * rudder_rad;
+
+	// Cl (Rolling moment coefficient)
+	double Cl_Total = state.Cl_b * beta_rad;
+	Cl_Total += state.Cl_p * p_rad * b_ft / (2.0 * V_fps);
+	Cl_Total += state.Cl_r * r_rad * b_ft / (2.0 * V_fps);
+	Cl_Total += state.Cl_delta_ail * aileron_rad;
+	Cl_Total += state.Cl_delta_rud * rudder_rad;
+
+	// Cn (Yawing moment coefficient)
+	double Cn_Total = state.CN_b * beta_rad;
+	Cn_Total += state.CN_p * p_rad * b_ft / (2.0 * V_fps);
+	Cn_Total += state.CN_r * r_rad * b_ft / (2.0 * V_fps);
+	Cn_Total += state.CN_delta_ail * aileron_rad;
+	Cn_Total += state.CN_delta_rud * rudder_rad;
+
+	// Aerodynamic Forces (body-Y is lateral)
 	state.LatDir_FX_lbs = 0;
-	state.LatDir_FY_lbs = 0;
+	state.LatDir_FY_lbs = CY_Total * state.DynamicPressure_psf * state.ReferenceWingArea_ft2;
 	state.LatDir_FZ_lbs = 0;
-	// Sum of Moments
-	state.LatDir_MX_ftlbs = 0;
+
+	// Aerodynamic Moments
+	state.LatDir_MX_ftlbs = Cl_Total * state.DynamicPressure_psf * state.ReferenceWingArea_ft2 * b_ft;
 	state.LatDir_MY_ftlbs = 0;
-	state.LatDir_MZ_ftlbs = 0;
+	state.LatDir_MZ_ftlbs = Cn_Total * state.DynamicPressure_psf * state.ReferenceWingArea_ft2 * b_ft;
+
 	// Output
 	return state;
 };

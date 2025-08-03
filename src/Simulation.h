@@ -14,6 +14,8 @@ class Simulation{
 		Model model;
 		State initial_state;
 		std::vector<State> state_history;
+		std::vector<double> input_time;
+
 
 	// Methods
 	public:

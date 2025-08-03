@@ -2,11 +2,13 @@
 
 #include "main.h"
 
-int main() {
-    // Model inputs
-    double max_time = 60;
-    double altitude_msl_ft = 55000;
-    double mach = 1.8;
+int main(int argc, char* argv[]) {
+    // Model initial conditions
+    std::string manuever_type = argv[1];
+    double altitude_msl_ft = atof(argv[2]);
+    double mach = atof(argv[3]);
+    //double altitude_msl_ft = 55000;
+    //double mach = 1.8;
     //double altitude_msl_ft = 0;
     //double mach = 0.3;
     double alpha_deg = 5;
@@ -19,7 +21,7 @@ int main() {
     Sim.initial_state = Sim.model.SetMach(Sim.initial_state, mach);
     Sim.initial_state = Sim.model.SetAlpha(Sim.initial_state, alpha_deg);
     Sim.initial_state.Throttle_norm = throttle_norm;
-    Sim.initial_state.StabPosition_deg = stab_position_deg;
+    Sim.initial_state.StabCommand_deg = stab_position_deg;
     // Basic 3-Dof Lon trim
     State guess = Sim.initial_state;
     bool isTrimmed = Sim.SolveTrim(Sim.initial_state, guess);
@@ -27,12 +29,53 @@ int main() {
     // Print Trim States
     std::cout << std::fixed << std::setprecision(3)
         << "Alpha_deg: " << std::setw(8) << Sim.initial_state.Alpha_deg
-        << "  StabPosition_deg: " << std::setw(6) << Sim.initial_state.StabPosition_deg
+        << "  StabCommand_deg: " << std::setw(6) << Sim.initial_state.StabCommand_deg
         << "  Throttle_norm: " << std::setw(6) << Sim.initial_state.Throttle_norm
         << "  Qdot: " << std::setw(8) << Sim.initial_state.Q_dot_dps2
         << "  Udot: " << std::setw(8) << Sim.initial_state.U_dot_fps2
         << "  Wdot: " << std::setw(8) << Sim.initial_state.W_dot_fps2
         << std::endl;
+    // Pick a manuever type and set up inputs (if any)
+    double max_time = 60;
+    if (manuever_type == "AileronDoublet") {
+        // Aileron Doublet
+        max_time = 30;
+        Sim.model.inputs.AileronCommand_deg.time.push_back(1.0);
+        Sim.model.inputs.AileronCommand_deg.value.push_back(2.0);
+        Sim.model.inputs.AileronCommand_deg.time.push_back(2.0);
+        Sim.model.inputs.AileronCommand_deg.value.push_back(-2.0);
+        Sim.model.inputs.AileronCommand_deg.time.push_back(3.0);
+        Sim.model.inputs.AileronCommand_deg.value.push_back(0.0);
+    }
+    else if (manuever_type == "RudderDoublet") {
+        // Rudder Doublet
+        max_time = 30;
+        Sim.model.inputs.RudderCommand_deg.time.push_back(1.0);
+        Sim.model.inputs.RudderCommand_deg.value.push_back(2.0);
+        Sim.model.inputs.RudderCommand_deg.time.push_back(2.0);
+        Sim.model.inputs.RudderCommand_deg.value.push_back(-2.0);
+        Sim.model.inputs.RudderCommand_deg.time.push_back(3.0);
+        Sim.model.inputs.RudderCommand_deg.value.push_back(0.0);
+    }
+    else if (manuever_type == "StabDoublet") {
+        // Stab Doublet
+        max_time = 30;
+        double init_stab = Sim.initial_state.StabCommand_deg;
+        Sim.model.inputs.StabCommand_deg.time.push_back(1.0);
+        Sim.model.inputs.StabCommand_deg.value.push_back(init_stab + 2.0);
+        Sim.model.inputs.StabCommand_deg.time.push_back(2.0);
+        Sim.model.inputs.StabCommand_deg.value.push_back(init_stab -2.0);
+        Sim.model.inputs.StabCommand_deg.time.push_back(3.0);
+        Sim.model.inputs.StabCommand_deg.value.push_back(init_stab);
+    }
+    else {
+        // Default to this if invalid name is provided
+        if (manuever_type != "LonTrim") {
+            std::cout << "Unknown Manuever! Assuming LonTrim." << std::endl;
+        }
+        // Longitudinal Trim
+
+    }
     // Run Model
     Sim.run(max_time);
     // Output State History
@@ -40,6 +83,7 @@ int main() {
     return 0;
 };
 
+// Cost function sweeps
 //int main(int argc, char* argv[]) {
 //    // Model inputs
 //    double max_time = 10;

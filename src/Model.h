@@ -3,6 +3,7 @@
 #include <cmath>
 #include "USSA.h"
 #include <algorithm>
+#include <vector>
 
 struct State {
 	// Sim Settings
@@ -14,12 +15,10 @@ struct State {
 	double SpeedOfSound_SeaLevel_fps = 661.47 * 1.688;
 	double StaticPressure_SeaLevel_psf = 2116.23 ;
 	double ThrustLimit_lbs = 15600;
-	double StabLimit_deg = 30; // Just a guess
-	double AilerontLimit_deg = 20; // Just a guess
 	// Controls
-	double RollStick_norm = 0; // 1 full is right wing down, -1 is full left wing down
-	double StabPosition_deg = 0;
-	double AileronPosition_deg = 0;
+	double StabCommand_deg = 0;
+	double AileronCommand_deg = 0;
+	double RudderCommand_deg = 0;
 	// Mass Properties
 	double AircraftWeight_lbs = 16300;
 	double CGx_pct = 7;
@@ -76,11 +75,11 @@ struct State {
 	// double Cyr = -2 * (lv / b) * Cyb;
 	double Cl_r = 0.15;
 	double CN_r = -0.65;
-	double Cl_alpha = 0.017;
-	double CN_alpha = 0.0025;
-	double CY_delta_r = 0.05;
-	double Cl_delta_r = 0.008;
-	double CN_delta_r = -0.04;
+	double Cl_delta_ail = 0.017;
+	double CN_delta_ail = 0.0025;
+	double CY_rud = 0.05;
+	double Cl_delta_rud = 0.008;
+	double CN_delta_rud = -0.04;
 	// Propulsion
 	double Throttle_norm = 0;
 	double Thrust_lb = 0;
@@ -135,12 +134,23 @@ struct State {
 	double Time_sec = 0;
 };
 
+struct Input {
+	std::vector<double> time;
+	std::vector<double> value;
+};
+
+struct Inputs {
+	Input StabCommand_deg;
+	Input AileronCommand_deg;
+	Input RudderCommand_deg;
+};
 
 class Model{
 	// Properties
 	public:
 		double dt = 0.005;
 		USSA atmosphere;
+		Inputs inputs;
 
 	// Methods
 	public:

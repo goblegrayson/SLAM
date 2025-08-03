@@ -18,8 +18,27 @@ void Simulation::run(double max_time) {
     // Set up state history
 	state_history.resize(n_frames);
 	state_history[0] = state;
+    // Input counters
+    int i_stab = 0;
+    int i_ail = 0;
+    int i_rud = 0;
 	// Main Loop
 	for (int i_frame = 1; i_frame < n_frames; i_frame++) {
+        // Set Stab input
+        if (!model.inputs.StabCommand_deg.time.empty() && abs(state.Time_sec - model.inputs.StabCommand_deg.time[i_stab]) < model.dt) {
+            state.StabCommand_deg = model.inputs.StabCommand_deg.value[i_stab];
+            i_stab = std::min(i_stab + 1, int(model.inputs.StabCommand_deg.time.size()) - 1);
+        }
+        // Set Aileron input
+        if (!model.inputs.AileronCommand_deg.time.empty() && abs(state.Time_sec - model.inputs.AileronCommand_deg.time[i_ail]) < model.dt) {
+            state.AileronCommand_deg = model.inputs.AileronCommand_deg.value[i_ail];
+            i_ail = std::min(i_ail + 1, int(model.inputs.AileronCommand_deg.time.size()) - 1);
+        }
+        // Set Rudder input
+        if (!model.inputs.RudderCommand_deg.time.empty() && abs(state.Time_sec - model.inputs.RudderCommand_deg.time[i_rud]) < model.dt) {
+            state.RudderCommand_deg = model.inputs.RudderCommand_deg.value[i_rud];
+            i_rud = std::min(i_rud + 1, int(model.inputs.RudderCommand_deg.time.size()) - 1);
+        }
 		// Run time step
 		state = model.Step(state);
 		// Store state in state_history vector
@@ -38,20 +57,19 @@ void Simulation::toCSV(const std::string& filename) {
         return;
     }
 
-    // ========================================================================
-    // WRITE HEADER ROW - Organized by category for readability
-    // ========================================================================
+    // =============================
+    // WRITE HEADER ROW
+    // =============================
     file <<
         // Simulation
         "Time_sec,"
 
         // Reference Parameters
         "ReferenceWingArea_ft2,ReferenceChord_ft,ReferenceSpan_ft,"
-        "SpeedOfSound_SeaLevel_fps,StaticPressure_SeaLevel_psf,"
-        "ThrustLimit_lbs,StabLimit_deg,AilerontLimit_deg,"
+        "SpeedOfSound_SeaLevel_fps,StaticPressure_SeaLevel_psf,ThrustLimit_lbs,"
 
         // Controls
-        "StabPosition_deg,RollStick_norm,Throttle_norm,"
+        "StabCommand_deg,AileronCommand_deg,RudderCommand_deg,Throttle_norm,"
 
         // Mass Properties
         "AircraftWeight_lbs,CGx_pct,"
@@ -65,22 +83,29 @@ void Simulation::toCSV(const std::string& filename) {
         "StaticPressure_psf,DynamicPressure_psf,TotalPressure_psf,"
 
         // Aero Angles
-        "Alpha_deg,Beta_deg,Gamma_deg,"
+        "Alpha_deg,Alpha_dot_dps,Beta_deg,Beta_dot_dps,Gamma_deg,"
 
-        // Longitudinal Aerodynamics
-        "CL0,CD0,CL_alpha,CD_alpha,CM_alpha,"
+        // Longitudinal Aero Coefficients
+        "CL0,CD0,CM0,CL_alpha,CD_alpha,CM_alpha,"
         "CL_alpha_dot,CM_alpha_dot,CL_q,CM_q,"
         "CL_m,CD_m,CM_m,CL_delta_stab,CM_delta_stab,"
 
-        // Lateral-Directional Aerodynamics
+        // Lateral-Directional Aero Coefficients
         "CY_b,Cl_b,CN_b,Cl_p,CN_p,Cl_r,CN_r,"
-        "Cl_alpha,CN_alpha,CY_delta_r,Cl_delta_r,CN_delta_r,"
+        "Cl_delta_ail,CN_delta_ail,CY_rud,Cl_delta_rud,CN_delta_rud,"
 
         // Propulsion
-        "Throttle_norm,Thrust_lb,"
+        "Thrust_lb,"
 
         // Forces & Moments
-        "FX_lbs,FY_lbs,FZ_lbs,MX_ftlbs,MY_ftlbs,MZ_ftlbs,"
+        "Lon_FX_lbs,Lon_FY_lbs,Lon_FZ_lbs,"
+        "LatDir_FX_lbs,LatDir_FY_lbs,LatDir_FZ_lbs,"
+        "Propulsion_FX_lbs,Propulsion_FY_lbs,Propulsion_FZ_lbs,"
+        "FX_lbs,FY_lbs,FZ_lbs,"
+        "Lon_MX_ftlbs,Lon_MY_ftlbs,Lon_MZ_ftlbs,"
+        "LatDir_MX_ftlbs,LatDir_MY_ftlbs,LatDir_MZ_ftlbs,"
+        "Propulsion_MX_ftlbs,Propulsion_MY_ftlbs,Propulsion_MZ_ftlbs,"
+        "MX_ftlbs,MY_ftlbs,MZ_ftlbs,"
 
         // Derivatives (Rates)
         "U_dot_fps2,V_dot_fps2,W_dot_fps2,"
@@ -92,23 +117,19 @@ void Simulation::toCSV(const std::string& filename) {
         "Phi_deg,Theta_deg,Psi_deg"
         << "\n";
 
-    // ========================================================================
+    // =============================
     // WRITE DATA ROWS
-    // ========================================================================
-    for (size_t i = 0; i < state_history.size(); ++i) {
-        const State& s = state_history[i];  // Use reference to avoid copying
-
+    // =============================
+    for (const auto& s : state_history) {
         file <<
-            // Simulation
             s.Time_sec << ","
 
             // Reference Parameters
             << s.ReferenceWingArea_ft2 << "," << s.ReferenceChord_ft << "," << s.ReferenceSpan_ft << ","
-            << s.SpeedOfSound_SeaLevel_fps << "," << s.StaticPressure_SeaLevel_psf << ","
-            << s.ThrustLimit_lbs << "," << s.StabLimit_deg << "," << s.AilerontLimit_deg << ","
+            << s.SpeedOfSound_SeaLevel_fps << "," << s.StaticPressure_SeaLevel_psf << "," << s.ThrustLimit_lbs << ","
 
             // Controls
-            << s.StabPosition_deg << "," << s.RollStick_norm << "," << s.Throttle_norm << ","
+            << s.StabCommand_deg << "," << s.AileronCommand_deg << "," << s.RudderCommand_deg << "," << s.Throttle_norm << ","
 
             // Mass Properties
             << s.AircraftWeight_lbs << "," << s.CGx_pct << ","
@@ -117,58 +138,65 @@ void Simulation::toCSV(const std::string& filename) {
 
             // Environment
             << s.AltitudeMeanSeaLevel_ft << "," << s.MachNumber << ","
-            << s.TrueAirspeed_fps << "," << s.TrueAirspeed_kt << ","
-            << s.EquivilantAirspeed_fps << "," << s.EquivilantAirspeed_kt << ","
+            << s.TrueAirspeed_fps << "," << s.TrueAirspeed_kt << "," << s.EquivilantAirspeed_fps << "," << s.EquivilantAirspeed_kt << ","
             << s.AccelGravity_fts2 << "," << s.SpeedOfSound_kt << "," << s.SpeedOfSound_fps << ","
             << s.AirTemperature_r << "," << s.AirDensity_slugft3 << ","
             << s.StaticPressure_psf << "," << s.DynamicPressure_psf << "," << s.TotalPressure_psf << ","
 
             // Aero Angles
-            << s.Alpha_deg << "," << s.Beta_deg << "," << s.Gamma_deg << ","
+            << s.Alpha_deg << "," << s.Alpha_dot_dps << ","
+            << s.Beta_deg << "," << s.Beta_dot_dps << "," << s.Gamma_deg << ","
 
-            // Longitudinal Aerodynamics
-            << s.CL0 << "," << s.CD0 << "," << s.CL_alpha << "," << s.CD_alpha << "," << s.CM_alpha << ","
+            // Longitudinal Aero Coefficients
+            << s.CL0 << "," << s.CD0 << "," << s.CM0 << ","
+            << s.CL_alpha << "," << s.CD_alpha << "," << s.CM_alpha << ","
             << s.CL_alpha_dot << "," << s.CM_alpha_dot << "," << s.CL_q << "," << s.CM_q << ","
             << s.CL_m << "," << s.CD_m << "," << s.CM_m << ","
             << s.CL_delta_stab << "," << s.CM_delta_stab << ","
 
-            // Lateral-Directional Aerodynamics
+            // Lateral-Directional Aero Coefficients
             << s.CY_b << "," << s.Cl_b << "," << s.CN_b << ","
             << s.Cl_p << "," << s.CN_p << "," << s.Cl_r << "," << s.CN_r << ","
-            << s.Cl_alpha << "," << s.CN_alpha << ","
-            << s.CY_delta_r << "," << s.Cl_delta_r << "," << s.CN_delta_r << ","
+            << s.Cl_delta_ail << "," << s.CN_delta_ail << ","
+            << s.CY_rud << "," << s.Cl_delta_rud << "," << s.CN_delta_rud << ","
 
             // Propulsion
-            << s.Throttle_norm << "," << s.Thrust_lb << ","
+            << s.Thrust_lb << ","
 
             // Forces & Moments
+            << s.Lon_FX_lbs << "," << s.Lon_FY_lbs << "," << s.Lon_FZ_lbs << ","
+            << s.LatDir_FX_lbs << "," << s.LatDir_FY_lbs << "," << s.LatDir_FZ_lbs << ","
+            << s.Propulsion_FX_lbs << "," << s.Propulsion_FY_lbs << "," << s.Propulsion_FZ_lbs << ","
             << s.FX_lbs << "," << s.FY_lbs << "," << s.FZ_lbs << ","
+            << s.Lon_MX_ftlbs << "," << s.Lon_MY_ftlbs << "," << s.Lon_MZ_ftlbs << ","
+            << s.LatDir_MX_ftlbs << "," << s.LatDir_MY_ftlbs << "," << s.LatDir_MZ_ftlbs << ","
+            << s.Propulsion_MX_ftlbs << "," << s.Propulsion_MY_ftlbs << "," << s.Propulsion_MZ_ftlbs << ","
             << s.MX_ftlbs << "," << s.MY_ftlbs << "," << s.MZ_ftlbs << ","
 
-            // Derivatives (Rates)
+            // Derivatives
             << s.U_dot_fps2 << "," << s.V_dot_fps2 << "," << s.W_dot_fps2 << ","
             << s.P_dot_dps2 << "," << s.Q_dot_dps2 << "," << s.R_dot_dps2 << ","
             << s.Phi_dot_dps << "," << s.Theta_dot_dps << "," << s.Psi_dot_dps << ","
 
-            // Integrated States (no comma after last item)
+            // Integrated States
             << s.U_fps << "," << s.V_fps << "," << s.W_fps << ","
             << s.P_dps << "," << s.Q_dps << "," << s.R_dps << ","
             << s.Phi_deg << "," << s.Theta_deg << "," << s.Psi_deg
+
             << "\n";
     }
 
     file.close();
     std::cout << "Complete state history (" << state_history.size()
-        << " records) written to " << filename << std::endl;
-    // Thanks Claude :)
-}
+              << " records) written to " << filename << std::endl;
+} // Thanks Claude :)
 
 // Trim methods
 State Simulation::TrimResiduals(const State& base, const State& inputs) {
     // Set inputs
     State state = base;
     state = model.SetAlpha(state, inputs.Alpha_deg);
-    state.StabPosition_deg = inputs.StabPosition_deg;
+    state.StabCommand_deg = inputs.StabCommand_deg;
     state.Throttle_norm = inputs.Throttle_norm;
     // Run Step
     state = model.Step(state);
@@ -205,7 +233,7 @@ bool Simulation::SolveTrim(const State& initialState, State& trimGuess) {
             std::cout << "Step " << iter << " Cost: " << cost << std::endl;
             std::cout << std::fixed << std::setprecision(3)
                 << "Alpha_deg: " << std::setw(8) << state.Alpha_deg
-                << "  StabPosition_deg: " << std::setw(6) << state.StabPosition_deg
+                << "  StabCommand_deg: " << std::setw(6) << state.StabCommand_deg
                 << "  Throttle_norm: " << std::setw(6) << state.Throttle_norm
                 << "  Qdot: " << std::setw(8) << state.Q_dot_dps2
                 << "  Udot: " << std::setw(8) << state.U_dot_fps2
@@ -229,7 +257,7 @@ bool Simulation::SolveTrim(const State& initialState, State& trimGuess) {
         for (int i = 0; i < n_states; ++i) {
             State perturbed = trimGuess;
             double* param = (i == 0) ? &perturbed.Alpha_deg
-                : (i == 1) ? &perturbed.StabPosition_deg
+                : (i == 1) ? &perturbed.StabCommand_deg
                 : &perturbed.Throttle_norm;
 
             double original = *param;
@@ -244,19 +272,19 @@ bool Simulation::SolveTrim(const State& initialState, State& trimGuess) {
             }
             //std::cout << "  Gradient[" << i << "] = " << gradVal << std::endl;
             if (i == 0) grad.Alpha_deg = gradVal;
-            else if (i == 1) grad.StabPosition_deg = gradVal;
+            else if (i == 1) grad.StabCommand_deg = gradVal;
             else grad.Throttle_norm = gradVal;
             *param = original; // restore
         }
         // Gradient descent step
         trimGuess.Alpha_deg -= stepSize[0] * grad.Alpha_deg;
-        trimGuess.StabPosition_deg -= stepSize[1] * grad.StabPosition_deg;
+        trimGuess.StabCommand_deg -= stepSize[1] * grad.StabCommand_deg;
         trimGuess.Throttle_norm -= stepSize[2] * grad.Throttle_norm;
         // Clamp inputs
         if (trimGuess.Alpha_deg < -45)    trimGuess.Alpha_deg = -45;
         if (trimGuess.Alpha_deg > 45)    trimGuess.Alpha_deg = 45;
-        if (trimGuess.StabPosition_deg < -30) trimGuess.StabPosition_deg = -30;
-        if (trimGuess.StabPosition_deg > 30.0)  trimGuess.StabPosition_deg = 30.0;
+        if (trimGuess.StabCommand_deg < -30) trimGuess.StabCommand_deg = -30;
+        if (trimGuess.StabCommand_deg > 30.0)  trimGuess.StabCommand_deg = 30.0;
         if (trimGuess.Throttle_norm < 0.0)    trimGuess.Throttle_norm = 0.0;
         if (trimGuess.Throttle_norm > 1.0)    trimGuess.Throttle_norm = 1.0;
     }
@@ -269,7 +297,7 @@ bool Simulation::SolveTrim(const State& initialState, State& trimGuess) {
 double Simulation::TestCost(double alpha, double pitch, double throttle) {
     State guess = initial_state;
     guess.Alpha_deg = alpha;
-    guess.StabPosition_deg = pitch;
+    guess.StabCommand_deg = pitch;
     guess.Throttle_norm = throttle;
     State result = TrimResiduals(initial_state, guess);
     return CalcCost(result);
