@@ -35,9 +35,31 @@ State Model::SetMach(State state, double mach) {
 	state.W_fps = state.TrueAirspeed_fps * sin(alpha_rad) * cos(beta_rad);
 	// Update the atmospherics
 	state = Atmosphere(state);
+	state = AeroAngles(state);
 	// Output
 	return state;
 };
+
+State Model::SetAlpha(State state, double alpha_deg) {
+	// Set the new angle of attack
+	state.Alpha_deg = alpha_deg;
+	// Preserve gamma
+	state.Theta_deg = alpha_deg + state.Gamma_deg;
+	// Convert angles to radians
+	double alpha_rad = alpha_deg * M_PI / 180.0;
+	double beta_rad = state.Beta_deg * M_PI / 180.0;
+	// Maintain current true airspeed
+	double V = state.TrueAirspeed_fps;
+	// Update body-axis velocities based on new alpha
+	state.U_fps = V * cos(alpha_rad) * cos(beta_rad);
+	state.V_fps = V * sin(beta_rad);
+	state.W_fps = V * sin(alpha_rad) * cos(beta_rad);
+	// Update any downstream dependencies
+	state = Atmosphere(state);
+	state = AeroAngles(state);
+	// Return updated state
+	return state;
+}
 
 
 State Model::Step(State state) {
@@ -53,8 +75,10 @@ State Model::Step(State state) {
 	state = Propulsion(state);
 	// Equations Of Motion
 	state = EquationsOfMotion(state);
-	// Integration Model
-	state = Integration(state);
+	// Integration
+	if (state.Integrate) {
+		state = Integration(state);
+	}
 	// Output
 	return state;
 };
@@ -124,35 +148,37 @@ State Model::LonAero(State state) {
 	// Angles in rads/sec
 	double alpha_rad = state.Alpha_deg * M_PI / 180.0;
 	double q_rad = state.Q_dps * M_PI / 180.0;
-	double alpha_dot_rad = state.Alpha_dot_dps * M_PI / 180.0;
-	double beta_dot_rad = state.Beta_dot_dps * M_PI / 180.0;
+	double alpha_dot_rps = state.Alpha_dot_dps * M_PI / 180.0;
+	double beta_dot_rps = state.Beta_dot_dps * M_PI / 180.0;
 	// Stab position
 	state.StabPosition_deg = -state.PitchStick_norm * state.StabLimit_deg;
+	double stab_rad = state.StabPosition_deg * M_PI / 180.0;
 	// CL
 	double CL_Total = state.CL0;
 	CL_Total += state.CL_alpha * alpha_rad;
-	CL_Total += state.CL_alpha_dot * alpha_rad * state.ReferenceChord_ft / (2 * state.TrueAirspeed_fps);
+	CL_Total += state.CL_alpha_dot * alpha_dot_rps * state.ReferenceChord_ft / (2 * state.TrueAirspeed_fps);
 	CL_Total += state.CL_q * q_rad * state.ReferenceChord_ft / (2 * state.TrueAirspeed_fps);
 	CL_Total += state.CL_m * state.MachNumber;
-	CL_Total += state.CL_delta_stab * state.StabPosition_deg;
+	CL_Total += state.CL_delta_stab * stab_rad;
 	// CD
 	double CD_Total = state.CD0;
 	CD_Total += state.CD_alpha * alpha_rad;
 	CD_Total += state.CD_m * state.MachNumber;
 	// CM
-	double CM_Total = state.CM_alpha * alpha_rad;
-	CM_Total += state.CM_alpha_dot * alpha_rad * state.ReferenceChord_ft / (2 * state.TrueAirspeed_fps);
+	double CM_Total = state.CM0;
+	CM_Total += state.CM_alpha * alpha_rad;
+	CM_Total += state.CM_alpha_dot * alpha_dot_rps * state.ReferenceChord_ft / (2 * state.TrueAirspeed_fps);
 	CM_Total += state.CM_q * q_rad * state.ReferenceChord_ft / (2 * state.TrueAirspeed_fps);
 	CM_Total += state.CM_m * state.MachNumber;
-	CM_Total += state.CM_delta_stab * state.StabPosition_deg;
+	CM_Total += state.CM_delta_stab * stab_rad;
 	// Sum of Forces
 	state.Lon_FX_lbs = (CL_Total * sin(alpha_rad) - CD_Total * cos(alpha_rad)) * state.DynamicPressure_psf * state.ReferenceWingArea_ft2;
 	state.Lon_FY_lbs = 0;
 	state.Lon_FZ_lbs = (-CL_Total * cos(alpha_rad) - CD_Total * sin(alpha_rad)) * state.DynamicPressure_psf * state.ReferenceWingArea_ft2;;
 	// Sum of Moments
-	state.Lon_MX_lbs = 0;
-	state.Lon_MY_lbs = CM_Total * state.DynamicPressure_psf * state.ReferenceWingArea_ft2 * state.ReferenceChord_ft;
-	state.Lon_MZ_lbs = 0;
+	state.Lon_MX_ftlbs = 0;
+	state.Lon_MY_ftlbs = CM_Total * state.DynamicPressure_psf * state.ReferenceWingArea_ft2 * state.ReferenceChord_ft;
+	state.Lon_MZ_ftlbs = 0;
 	// Output
 	return state;
 };
@@ -164,9 +190,9 @@ State Model::LatDirAero(State state) {
 	state.LatDir_FY_lbs = 0;
 	state.LatDir_FZ_lbs = 0;
 	// Sum of Moments
-	state.LatDir_MX_lbs = 0;
-	state.LatDir_MY_lbs = 0;
-	state.LatDir_MZ_lbs = 0;
+	state.LatDir_MX_ftlbs = 0;
+	state.LatDir_MY_ftlbs = 0;
+	state.LatDir_MZ_ftlbs = 0;
 	// Output
 	return state;
 };
@@ -180,9 +206,9 @@ State Model::Propulsion(State state) {
 	state.Propulsion_FY_lbs = 0;
 	state.Propulsion_FZ_lbs = 0;
 	// Sum of Moments
-	state.Propulsion_MX_lbs = 0;
-	state.Propulsion_MY_lbs = 0;
-	state.Propulsion_MZ_lbs = 0;
+	state.Propulsion_MX_ftlbs = 0;
+	state.Propulsion_MY_ftlbs = 0;
+	state.Propulsion_MZ_ftlbs = 0;
 	// Output
 	return state;
 };
@@ -203,26 +229,29 @@ State Model::EquationsOfMotion(State state) {
 	double sin_theta = sin(theta_rad);
 	double tan_theta = tan(theta_rad);
 	// Gravity
-	double mass_sl = state.AircraftWeight_lbs / state.AccelGravity_fts2;
-	double Gravity_FX_lbs = -state.AircraftWeight_lbs * sin_theta;
-	double Gravity_FY_lbs = state.AircraftWeight_lbs * sin_phi * cos_theta;
-	double Gravity_FZ_lbs = state.AircraftWeight_lbs * cos_phi * cos_theta;
+	double g = state.AccelGravity_fts2;
+	double mass_sl = state.AircraftWeight_lbs / g;
+	double Gravity_FX_lbs = -state.AircraftWeight_lbs * sin(theta_rad);
+	double Gravity_FY_lbs = state.AircraftWeight_lbs * cos(theta_rad) * sin(phi_rad);
+	double Gravity_FZ_lbs = state.AircraftWeight_lbs * cos(theta_rad) * cos(phi_rad);
 	// Sum of Forces
 	state.FX_lbs = state.Lon_FX_lbs + state.LatDir_FX_lbs + state.Propulsion_FX_lbs + Gravity_FX_lbs;
 	state.FY_lbs = state.Lon_FY_lbs + state.LatDir_FY_lbs + state.Propulsion_FY_lbs + Gravity_FY_lbs;
 	state.FZ_lbs = state.Lon_FZ_lbs + state.LatDir_FZ_lbs + state.Propulsion_FZ_lbs + Gravity_FZ_lbs;
 	// Sum of Moments
-	state.MX_lbs = state.Lon_MX_lbs + state.LatDir_MX_lbs + state.Propulsion_MX_lbs;
-	state.MY_lbs = state.Lon_MY_lbs + state.LatDir_MY_lbs + state.Propulsion_MY_lbs;
-	state.MZ_lbs = state.Lon_MZ_lbs + state.LatDir_MZ_lbs + state.Propulsion_MZ_lbs;
+	state.MX_ftlbs = state.Lon_MX_ftlbs + state.LatDir_MX_ftlbs + state.Propulsion_MX_ftlbs;
+	state.MY_ftlbs = state.Lon_MY_ftlbs + state.LatDir_MY_ftlbs + state.Propulsion_MY_ftlbs;
+	state.MZ_ftlbs = state.Lon_MZ_ftlbs + state.LatDir_MZ_ftlbs + state.Propulsion_MZ_ftlbs;
 	// Translation Derivatives
 	state.U_dot_fps2 = state.FX_lbs / mass_sl + r_rad * state.V_fps - q_rad * state.W_fps;
 	state.V_dot_fps2 = state.FY_lbs / mass_sl - r_rad * state.U_fps + p_rad * state.W_fps;
 	state.W_dot_fps2 = state.FZ_lbs / mass_sl + q_rad * state.U_fps - p_rad * state.V_fps;
-	// Rotation Derivatives
-	double p_dot_rps2 = (state.MX_lbs + (state.Iyy_slft - state.Izz_slft) * q_rad * r_rad) / state.Ixx_slft;
-	double q_dot_rps2 = (state.MY_lbs + (state.Izz_slft - state.Ixx_slft) * p_rad * r_rad) / state.Iyy_slft;
-	double r_dot_rps2 = (state.MZ_lbs + (state.Ixx_slft - state.Iyy_slft) * p_rad * q_rad) / state.Izz_slft;
+	// Rotation Derivatives assuming body frame aligned with principal axes.
+	// This is likely an oversimplification due to the T-tail impact on Ixz, but close enough for now.
+	// Future improvement could be solving the full form of the equations using a solver
+	double p_dot_rps2 = (state.MX_ftlbs + (state.Iyy_slft - state.Izz_slft) * q_rad * r_rad) / state.Ixx_slft;
+	double q_dot_rps2 = (state.MY_ftlbs + (state.Izz_slft - state.Ixx_slft) * p_rad * r_rad) / state.Iyy_slft;
+	double r_dot_rps2 = (state.MZ_ftlbs + (state.Ixx_slft - state.Iyy_slft) * p_rad * q_rad) / state.Izz_slft;
 	state.P_dot_dps2 = p_dot_rps2 * 180.0 / M_PI;
 	state.Q_dot_dps2 = q_dot_rps2 * 180.0 / M_PI;
 	state.R_dot_dps2 = r_dot_rps2 * 180.0 / M_PI;

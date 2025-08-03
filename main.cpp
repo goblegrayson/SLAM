@@ -4,23 +4,53 @@
 
 int main() {
     // Model inputs
-    double max_time = 360;
+    double max_time = 30;
     double altitude_msl_ft = 55000;
     double mach = 1.8;
+    double alpha_deg = 20;
+    double throttle_norm = 1;
+    double pitch_stick_norm = 0.892;
     //double mach = 0.5;
     // Initialize Model
     Simulation Sim;
     Sim.initial_state = Sim.model.SetAltitude(Sim.initial_state, altitude_msl_ft);
     Sim.initial_state = Sim.model.SetMach(Sim.initial_state, mach);
-    // Try and trim this thing out a bit
-    Sim.initial_state.Throttle_norm = 0.8;
-    Sim.initial_state.PitchStick_norm = 0.3;
+    Sim.initial_state = Sim.model.SetAlpha(Sim.initial_state, alpha_deg);
+    Sim.initial_state.Throttle_norm = throttle_norm;
+    Sim.initial_state.PitchStick_norm = pitch_stick_norm;
+    // Basic 3-Dof Lon trim
+    State guess = Sim.initial_state;
+    bool isTrimmed = Sim.SolveTrim(Sim.initial_state, guess);
+    Sim.initial_state = guess;
     // Run Model
     Sim.run(max_time);
     // Output State History
     Sim.toCSV("StateHistory.csv");
     return 0;
 };
+
+//int main(int argc, char* argv[]) {
+//    // Model inputs
+//    double max_time = 10;
+//    double altitude_msl_ft = 55000;
+//    double mach = 1.8;
+//    double alpha_deg = 0.25;
+//    //double mach = 0.5;
+//    // Initialize Model
+//    Simulation Sim;
+//    Sim.initial_state = Sim.model.SetAltitude(Sim.initial_state, altitude_msl_ft);
+//    Sim.initial_state = Sim.model.SetMach(Sim.initial_state, mach);
+//    if (argc == 4) {
+//        double alpha = atof(argv[1]);
+//        double pitch = atof(argv[2]);
+//        double throttle = atof(argv[3]);
+//        std::cout << Sim.TestCost(alpha, pitch, throttle) << std::endl;
+//        return 0;
+//    }
+//
+//    std::cerr << "Usage: <exe> alpha pitch throttle" << std::endl;
+//    return 1;
+//}
 
 
 

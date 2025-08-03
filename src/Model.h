@@ -5,6 +5,8 @@
 
 
 struct State {
+	// Sim Settings
+	bool Integrate = false;
 	// Reference Parameters
 	double ReferenceWingArea_ft2 = 196.1;
 	double ReferenceChord_ft = 9.55;
@@ -12,8 +14,8 @@ struct State {
 	double SpeedOfSound_SeaLevel_fps = 661.47 * 1.688;
 	double StaticPressure_SeaLevel_psf = 2116.23 ;
 	double ThrustLimit_lbs = 15600;
-	double StabLimit_deg = 10; // Just a guess
-	double AilerontLimit_deg = 10; // Just a guess
+	double StabLimit_deg = 30; // Just a guess
+	double AilerontLimit_deg = 20; // Just a guess
 	// Controls
 	double PitchStick_norm = 0; // 1 full is nose up, -1 is full now down
 	double RollStick_norm = 0; // 1 full is right wing down, -1 is full left wing down
@@ -50,8 +52,9 @@ struct State {
 	double Beta_dot_dps = 0;
 	double Gamma_deg = 0;
 	// Lon Aero
-	double CL0 = 0.2;
-	double CD0 = 0.055;
+	double CL0 = 0.05; // Guess
+	double CD0 = 0.0172; // https://historicalfighters.com/f-104g-general-technical-data/
+	double CM0 = -0.1; // Guess
 	double CL_alpha = 2;
 	double CD_alpha = 0.38;
 	double CM_alpha = -1.3;
@@ -63,7 +66,7 @@ struct State {
 	double CD_m = 0;
 	double CM_m = -0.01;
 	double CL_delta_stab = 0.52;
-	double CM_delta_stab = -0.1;
+	double CM_delta_stab = -1.13;
 	// Lat-Dir Aero - Note the distinction between CL (Lift Coefficient) and Cl (Rolling Moment Coefficient)
 	double CY_b = -1;
 	double Cl_b = -0.09;
@@ -95,18 +98,18 @@ struct State {
 	double FY_lbs = 0;
 	double FZ_lbs = 0;
 	// Moments 
-	double Lon_MX_lbs = 0;
-	double Lon_MY_lbs = 0;
-	double Lon_MZ_lbs = 0;
-	double LatDir_MX_lbs = 0;
-	double LatDir_MY_lbs = 0;
-	double LatDir_MZ_lbs = 0;
-	double Propulsion_MX_lbs = 0;
-	double Propulsion_MY_lbs = 0;
-	double Propulsion_MZ_lbs = 0;
-	double MX_lbs = 0;
-	double MY_lbs = 0;
-	double MZ_lbs = 0;
+	double Lon_MX_ftlbs = 0;
+	double Lon_MY_ftlbs = 0;
+	double Lon_MZ_ftlbs = 0;
+	double LatDir_MX_ftlbs = 0;
+	double LatDir_MY_ftlbs = 0;
+	double LatDir_MZ_ftlbs = 0;
+	double Propulsion_MX_ftlbs = 0;
+	double Propulsion_MY_ftlbs = 0;
+	double Propulsion_MZ_ftlbs = 0;
+	double MX_ftlbs = 0;
+	double MY_ftlbs = 0;
+	double MZ_ftlbs = 0;
 	// Rates
 	double U_dot_fps2 = 0;
 	double V_dot_fps2 = 0;
@@ -136,7 +139,7 @@ struct State {
 class Model{
 	// Properties
 	public:
-		double dt = 0.01;
+		double dt = 0.005;
 		USSA atmosphere;
 
 	// Methods
@@ -146,6 +149,7 @@ class Model{
 		State GetDefaultInitialState();
 		State SetAltitude(State state, double altitude_msl_ft);
 		State SetMach(State state, double mach);
+		State SetAlpha(State state, double alpha_deg);
 		State Step(State state);
 		// Component Models
 		State Atmosphere(State state);
