@@ -151,7 +151,6 @@ State Model::LonAero(State state) {
 	double alpha_dot_rps = state.Alpha_dot_dps * M_PI / 180.0;
 	double beta_dot_rps = state.Beta_dot_dps * M_PI / 180.0;
 	// Stab position
-	state.StabPosition_deg = -state.PitchStick_norm * state.StabLimit_deg;
 	double stab_rad = state.StabPosition_deg * M_PI / 180.0;
 	// CL
 	double CL_Total = state.CL0;
@@ -169,7 +168,7 @@ State Model::LonAero(State state) {
 	CM_Total += state.CM_alpha * alpha_rad;
 	CM_Total += state.CM_alpha_dot * alpha_dot_rps * state.ReferenceChord_ft / (2 * state.TrueAirspeed_fps);
 	CM_Total += state.CM_q * q_rad * state.ReferenceChord_ft / (2 * state.TrueAirspeed_fps);
-	CM_Total += state.CM_m * state.MachNumber;
+	CM_Total += state.CM_m * state.MachNumber * std::min(std::max((state.MachNumber - 0.8), 0.0), 1.0); // Fade this below transonic
 	CM_Total += state.CM_delta_stab * stab_rad;
 	// Sum of Forces
 	state.Lon_FX_lbs = (CL_Total * sin(alpha_rad) - CD_Total * cos(alpha_rad)) * state.DynamicPressure_psf * state.ReferenceWingArea_ft2;

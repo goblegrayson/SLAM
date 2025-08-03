@@ -2,7 +2,7 @@
 #define _USE_MATH_DEFINES
 #include <cmath>
 #include "USSA.h"
-
+#include <algorithm>
 
 struct State {
 	// Sim Settings
@@ -17,7 +17,6 @@ struct State {
 	double StabLimit_deg = 30; // Just a guess
 	double AilerontLimit_deg = 20; // Just a guess
 	// Controls
-	double PitchStick_norm = 0; // 1 full is nose up, -1 is full now down
 	double RollStick_norm = 0; // 1 full is right wing down, -1 is full left wing down
 	double StabPosition_deg = 0;
 	double AileronPosition_deg = 0;
@@ -52,9 +51,9 @@ struct State {
 	double Beta_dot_dps = 0;
 	double Gamma_deg = 0;
 	// Lon Aero
-	double CL0 = 0.05; // Guess
+	double CL0 = 0.05; // Ballpark guess
 	double CD0 = 0.0172; // https://historicalfighters.com/f-104g-general-technical-data/
-	double CM0 = -0.1; // Guess
+	double CM0 = 0.15; // Ballpark guess - positive because of very low camber and big t-tail
 	double CL_alpha = 2;
 	double CD_alpha = 0.38;
 	double CM_alpha = -1.3;
@@ -62,11 +61,12 @@ struct State {
 	double CM_alpha_dot = -2;
 	double CL_q = 0;
 	double CM_q = -4.8;
-	double CL_m = -0.2; // This is probably unreasonable for low speeds
+	double CL_m = -0.2;
 	double CD_m = 0;
 	double CM_m = -0.01;
 	double CL_delta_stab = 0.52;
-	double CM_delta_stab = -1.13;
+	// Baking in some correction here for physics that this simple model is missing in order to get reasonable trim alphas
+	double CM_delta_stab = -1.13 * 2; 
 	// Lat-Dir Aero - Note the distinction between CL (Lift Coefficient) and Cl (Rolling Moment Coefficient)
 	double CY_b = -1;
 	double Cl_b = -0.09;

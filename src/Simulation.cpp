@@ -51,7 +51,7 @@ void Simulation::toCSV(const std::string& filename) {
         "ThrustLimit_lbs,StabLimit_deg,AilerontLimit_deg,"
 
         // Controls
-        "PitchStick_norm,RollStick_norm,Throttle_norm,"
+        "StabPosition_deg,RollStick_norm,Throttle_norm,"
 
         // Mass Properties
         "AircraftWeight_lbs,CGx_pct,"
@@ -108,7 +108,7 @@ void Simulation::toCSV(const std::string& filename) {
             << s.ThrustLimit_lbs << "," << s.StabLimit_deg << "," << s.AilerontLimit_deg << ","
 
             // Controls
-            << s.PitchStick_norm << "," << s.RollStick_norm << "," << s.Throttle_norm << ","
+            << s.StabPosition_deg << "," << s.RollStick_norm << "," << s.Throttle_norm << ","
 
             // Mass Properties
             << s.AircraftWeight_lbs << "," << s.CGx_pct << ","
@@ -168,7 +168,7 @@ State Simulation::TrimResiduals(const State& base, const State& inputs) {
     // Set inputs
     State state = base;
     state = model.SetAlpha(state, inputs.Alpha_deg);
-    state.PitchStick_norm = inputs.PitchStick_norm;
+    state.StabPosition_deg = inputs.StabPosition_deg;
     state.Throttle_norm = inputs.Throttle_norm;
     // Run Step
     state = model.Step(state);
@@ -181,53 +181,55 @@ double Simulation::CalcCost(const State& state) {
     double cost = std::pow(state.Q_dot_dps2, 2) ;
     cost += std::pow(state.W_dot_fps2, 2);
     cost += std::pow(state.U_dot_fps2, 2);
-    //cost += 100 * std::pow(state.PitchStick_norm, 2);
     return cost;
 }
 
 
 bool Simulation::SolveTrim(const State& initialState, State& trimGuess) {
+    // Trim Settings
     int n_states = 3;
-    const double tol = 1;
-    const int maxIters = 10000;
-    std::vector<double> baseStepSize = { 1e-3, 1e-6, 1e-5 };
+    const double tol = 1e-3;
+    const int maxIters = 1e6;
+    std::vector<double> stepSize = { 1e-3, 1e-4, 1e-3 };
     const double fdEpsilon = 1e-3;
     const double maxGrad = 1e5;
+    bool verbose = false;
+    // Trim routine
     std::cout << "Trimming:" << std::endl;
     for (int iter = 0; iter < maxIters; ++iter) {
         // Evaluate current cost
         State state = TrimResiduals(initialState, trimGuess);
         double cost = CalcCost(state);
         // Print Outputs
-        std::cout << "Step " << iter << " Cost: " << cost << std::endl;
-        std::cout << std::fixed << std::setprecision(3)
-            << "Alpha_deg: " << std::setw(8) << state.Alpha_deg
-            << "  PitchStick_norm: " << std::setw(6) << state.PitchStick_norm
-            << "  Throttle_norm: " << std::setw(6) << state.Throttle_norm
-            << "  Qdot: " << std::setw(8) << state.Q_dot_dps2
-            << "  Udot: " << std::setw(8) << state.U_dot_fps2
-            << "  Wdot: " << std::setw(8) << state.W_dot_fps2
-            << std::endl;
+        if (verbose) {
+            std::cout << "Step " << iter << " Cost: " << cost << std::endl;
+            std::cout << std::fixed << std::setprecision(3)
+                << "Alpha_deg: " << std::setw(8) << state.Alpha_deg
+                << "  StabPosition_deg: " << std::setw(6) << state.StabPosition_deg
+                << "  Throttle_norm: " << std::setw(6) << state.Throttle_norm
+                << "  Qdot: " << std::setw(8) << state.Q_dot_dps2
+                << "  Udot: " << std::setw(8) << state.U_dot_fps2
+                << "  Wdot: " << std::setw(8) << state.W_dot_fps2
+                << std::endl;
+        }
         // Check convergence
         if (cost < tol) {
             trimGuess = state;
+            std::cout << "Success: " << iter << " Iterations" << std::endl;
             return true;
         }
-        // Step scaling with cost
-        double costScale = cost;
-        if (costScale < 1e-6) costScale = 1e-6;
-        if (costScale > 1)  costScale = 1;
-        std::vector<double> stepSize = {
-            baseStepSize[0] * std::pow(costScale, 2),
-            baseStepSize[1] * std::pow(costScale, 2),
-            baseStepSize[2] * std::pow(costScale, 2)
-        };
+        // Reduce step size discreetly for simplicity as we approach solution
+        if (cost < 1e-2) {
+            stepSize[0] = 1e-5;
+            stepSize[1] = 1e-4;
+            stepSize[2] = 1e-4;
+        }
         // Compute finite-difference gradients
         State grad = {0, 0, 0};
         for (int i = 0; i < n_states; ++i) {
             State perturbed = trimGuess;
             double* param = (i == 0) ? &perturbed.Alpha_deg
-                : (i == 1) ? &perturbed.PitchStick_norm
+                : (i == 1) ? &perturbed.StabPosition_deg
                 : &perturbed.Throttle_norm;
 
             double original = *param;
@@ -242,22 +244,23 @@ bool Simulation::SolveTrim(const State& initialState, State& trimGuess) {
             }
             //std::cout << "  Gradient[" << i << "] = " << gradVal << std::endl;
             if (i == 0) grad.Alpha_deg = gradVal;
-            else if (i == 1) grad.PitchStick_norm = gradVal;
+            else if (i == 1) grad.StabPosition_deg = gradVal;
             else grad.Throttle_norm = gradVal;
             *param = original; // restore
         }
         // Gradient descent step
         trimGuess.Alpha_deg -= stepSize[0] * grad.Alpha_deg;
-        trimGuess.PitchStick_norm -= stepSize[1] * grad.PitchStick_norm;
+        trimGuess.StabPosition_deg -= stepSize[1] * grad.StabPosition_deg;
         trimGuess.Throttle_norm -= stepSize[2] * grad.Throttle_norm;
         // Clamp inputs
         if (trimGuess.Alpha_deg < -45)    trimGuess.Alpha_deg = -45;
         if (trimGuess.Alpha_deg > 45)    trimGuess.Alpha_deg = 45;
-        if (trimGuess.PitchStick_norm < -1) trimGuess.PitchStick_norm = -1;
-        if (trimGuess.PitchStick_norm > 1.0)  trimGuess.PitchStick_norm = 1.0;
+        if (trimGuess.StabPosition_deg < -30) trimGuess.StabPosition_deg = -30;
+        if (trimGuess.StabPosition_deg > 30.0)  trimGuess.StabPosition_deg = 30.0;
         if (trimGuess.Throttle_norm < 0.0)    trimGuess.Throttle_norm = 0.0;
         if (trimGuess.Throttle_norm > 1.0)    trimGuess.Throttle_norm = 1.0;
     }
+    std::cout << "Failed" << std::endl;
     return false; // Did not converge
 }
 
@@ -266,7 +269,7 @@ bool Simulation::SolveTrim(const State& initialState, State& trimGuess) {
 double Simulation::TestCost(double alpha, double pitch, double throttle) {
     State guess = initial_state;
     guess.Alpha_deg = alpha;
-    guess.PitchStick_norm = pitch;
+    guess.StabPosition_deg = pitch;
     guess.Throttle_norm = throttle;
     State result = TrimResiduals(initial_state, guess);
     return CalcCost(result);

@@ -4,12 +4,14 @@
 
 int main() {
     // Model inputs
-    double max_time = 30;
+    double max_time = 60;
     double altitude_msl_ft = 55000;
     double mach = 1.8;
-    double alpha_deg = 20;
+    //double altitude_msl_ft = 0;
+    //double mach = 0.3;
+    double alpha_deg = 5;
     double throttle_norm = 1;
-    double pitch_stick_norm = 0.892;
+    double stab_position_deg = 0;
     //double mach = 0.5;
     // Initialize Model
     Simulation Sim;
@@ -17,11 +19,20 @@ int main() {
     Sim.initial_state = Sim.model.SetMach(Sim.initial_state, mach);
     Sim.initial_state = Sim.model.SetAlpha(Sim.initial_state, alpha_deg);
     Sim.initial_state.Throttle_norm = throttle_norm;
-    Sim.initial_state.PitchStick_norm = pitch_stick_norm;
+    Sim.initial_state.StabPosition_deg = stab_position_deg;
     // Basic 3-Dof Lon trim
     State guess = Sim.initial_state;
     bool isTrimmed = Sim.SolveTrim(Sim.initial_state, guess);
     Sim.initial_state = guess;
+    // Print Trim States
+    std::cout << std::fixed << std::setprecision(3)
+        << "Alpha_deg: " << std::setw(8) << Sim.initial_state.Alpha_deg
+        << "  StabPosition_deg: " << std::setw(6) << Sim.initial_state.StabPosition_deg
+        << "  Throttle_norm: " << std::setw(6) << Sim.initial_state.Throttle_norm
+        << "  Qdot: " << std::setw(8) << Sim.initial_state.Q_dot_dps2
+        << "  Udot: " << std::setw(8) << Sim.initial_state.U_dot_fps2
+        << "  Wdot: " << std::setw(8) << Sim.initial_state.W_dot_fps2
+        << std::endl;
     // Run Model
     Sim.run(max_time);
     // Output State History
