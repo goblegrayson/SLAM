@@ -14,7 +14,7 @@ SLAM is implemented in C++ using an object-oriented philosophy. It consists of t
   - Allows for easy lookup of atmospherics from the 1976 Standard Atmosphere tables.
 
 ## Physical and Aerodynamic Modeling Philosophy
-Atmospherics in SLAM are calculated using an implementation of the 1976 Standard Atmosphere (Yager, 2013). Aerodynamic coefficients are linear and invariant (hence the "L" in SLAM) and were scavenged from class notes, textbooks, and internet sources. 
+Atmospherics in SLAM are calculated using an implementation of the 1976 Standard Atmosphere (Yager, 2013). Aerodynamic coefficients and derivatives are linear and invariant (hence the "L" in SLAM) and were scavenged from class notes, textbooks, and internet sources. 
 Equations of motion are simplified assuming the aircraft body axes align with the principal axes of the aircraft and are integrated using Euler integration.
 
 ## Usage
