@@ -42,3 +42,7 @@ Plotting can be accomplished in the included plot_maneuvers.py using Pandas, and
 - Polymorphism of the model class could allow the Simulation class to operate using different models.
 
 ## Example Results
+![Basic Longitudinal Trim]([image-url](https://github.com/goblegrayson/SLAM/blob/main/output_files/LonTrim_Plot.png))
+![Stabilator Doublet]([image-url](https://github.com/goblegrayson/SLAM/blob/main/output_files/StabDoublet_Plot.png))
+![Aileron Doublet]([image-url](https://github.com/goblegrayson/SLAM/blob/main/output_files/AileronDoublet_Plot.png))
+![Rudder Doublet]([image-url](https://github.com/goblegrayson/SLAM/blob/main/output_files/RudderDoublet_Plot.png))
