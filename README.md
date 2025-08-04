@@ -49,5 +49,7 @@ Plotting can be accomplished in the included `plot_maneuvers.py` using Pandas, a
 
 ## Bibliography
 Hieser, Gerald, and Charles F Reid. “A Transonic Wind-Tunnel Investigation of the Longitudinal Aerodynamic Characteristics of a Model of the Lockheed XF-104 Airplane.” Nasa.gov, 1954, ntrs.nasa.gov/citations/20090023314. Accessed 4 Aug. 2025.
+
 Nelson, Robert C. Flight Stability and Automatic Control. Boston, Mass., Mcgraw Hill, 1998.
+
 Yager, Robert. Calculating Atmospheric Conditions (Temperature, Pressure, Air Density, and Speed of Sound) Using C++. 2013.
