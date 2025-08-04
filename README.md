@@ -19,7 +19,7 @@ Equations of motion are simplified assuming the aircraft body axes align with th
 
 ## Usage
 Once built, SLAM can be called from the command line using the following signature:
-SLAM.exe \[Maneuver Type\] \[Altitude Above MSL (ft)\] \[Mach Number\]
+`SLAM.exe \[Maneuver Type\] \[Altitude Above MSL (ft)\] \[Mach Number\]`
 
 Maneuver type should be one of the following current options:
 - LonTrim
