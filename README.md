@@ -1,12 +1,12 @@
 # Simple Linear Aircraft Model (SLAM)
-SLAM is a demonstrative 6 degree-of-freedom airplane flight simulation based loosely on the Lockheed F-104 Starfighter and implemented in object-oriented C++. Simulation results are output in csv format and plotted using the included Python utility scripts.
+SLAM is a demonstrative 6 degree-of-freedom airplane flight simulation based loosely on the Lockheed F-104 Starfighter and implemented in object-oriented C++. Simulation results are output in CSV format and plotted using the included Python utility scripts.
 
 ## Model Structure
 SLAM is implemented in C++ using an object-oriented philosophy. It consists of the following object structure:
 - Simulation Object 
   - Manages simulation level operations like initializing, trimming, and running time histories.
   - Trim is accomplished using gradient descent to find a 3-state longitudinal trim solution for angle-of-attack, stabilator, and throttle.
-  - Trim cost function can also be exposed to plot explanatory trim cost surfaces using plot_cost.py
+  - The trim cost function can also be exposed to plot explanatory trim cost surfaces using `plot_cost.py`
 - Model Object
   - Encapsulates all physical modeling including atmospherics, longitudinal and lateral-directional aerodynamics, propulsion, and equations of motion.
   - Allows for time-scheduled inputs for stabilator, aileron, and rudder.
@@ -21,7 +21,7 @@ Equations of motion are simplified assuming the aircraft body axes align with th
 Once built, SLAM can be called from the command line using the following signature:
 SLAM.exe \[Maneuver Type\] \[Altitude Above MSL (ft)\] \[Mach Number\]
 
-Manuever type should be one of the following current options:
+Maneuver type should be one of the following current options:
 - LonTrim
   - Basic 3-DOF trim and 60 second shakeout time history
 - StabDoublet
@@ -32,7 +32,7 @@ Manuever type should be one of the following current options:
   - Basic 3-DOF trim and 30 second time history with rudder doublet
 
 ## Plotting
-Plotting can be accomplished in the included plot_maneuvers.py using Pandas, and Matplotlib. This Python script currently runs all maneuvers types in SLAM via command line and plots exploratory plots for each manuever. 
+Plotting can be accomplished in the included `plot_maneuvers.py` using Pandas, and Matplotlib. This Python script currently runs all maneuvers types in SLAM via command line and plots exploratory plots for each maneuver. 
 
 ## Potential Future Work:
 - Additional maneuvers, such as thrust doublets or coordinated turns.
