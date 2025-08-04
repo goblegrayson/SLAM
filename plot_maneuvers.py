@@ -7,7 +7,7 @@ import subprocess
 from pathlib import Path
 
 # User Settings
-AltitudeMeanSeaLevel_m = 55000
+AltitudeMeanSeaLevel_ft = 55000
 MachNumber = 1.8
 maneuver_types = ['LonTrim', 'StabDoublet', 'AileronDoublet', 'RudderDoublet']
 pretty_types = ['Longitudinal Trim', 'Stabilator Doublet', 'Aileron Doublet', 'Rudder Doublet']
@@ -16,7 +16,7 @@ pretty_types = ['Longitudinal Trim', 'Stabilator Doublet', 'Aileron Doublet', 'R
 base_path = Path(__file__).absolute().parent
 state_paths = [base_path.joinpath('output_files', maneuver_type + '.csv') for maneuver_type in maneuver_types]
 exe_path = r"D:\Data\SLAM\x64\Debug\SLAM.exe"
-[subprocess.run([exe_path, maneuver_type, str(AltitudeMeanSeaLevel_m), str(MachNumber)], check=True) for i, maneuver_type in enumerate(maneuver_types) if not state_paths[i].exists()]
+[subprocess.run([exe_path, maneuver_type, str(AltitudeMeanSeaLevel_ft), str(MachNumber)], check=True) for i, maneuver_type in enumerate(maneuver_types) if not state_paths[i].exists()]
 
 # Set up up plots
 plot_specs = [[
@@ -56,7 +56,7 @@ for i_maneuver, plot_spec in enumerate(plot_specs):
     LonTrim = pd.read_csv(state_paths[i_maneuver])
     LonTrim = LonTrim.replace('\(ind\)', '', regex=True).astype(float).fillna(0)
     fig, axs = plt.subplots(6, 1, sharex=True, dpi=150, figsize=(10, 12))
-    fig.suptitle(f'SLAM: {pretty_types[i_maneuver]} Maneuver at {AltitudeMeanSeaLevel_m:.0f} ft, Mach {MachNumber}', fontsize=12)
+    fig.suptitle(f'SLAM: {pretty_types[i_maneuver]} Maneuver at {AltitudeMeanSeaLevel_ft:.0f} ft, Mach {MachNumber}', fontsize=12)
     for ax, (col, ylabel, ylim) in zip(axs, plot_spec):
         ax.plot(LonTrim['Time_sec'], LonTrim[col], label=col, color='tab:blue', linewidth=1.5)
         ax.set_ylabel(ylabel, fontsize=8)
