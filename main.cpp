@@ -5,23 +5,19 @@
 int main(int argc, char* argv[]) {
     // Model initial conditions
     std::string manuever_type = argv[1];
-    double altitude_msl_ft = atof(argv[2]);
-    double mach = atof(argv[3]);
-    //double altitude_msl_ft = 55000;
-    //double mach = 1.8;
-    //double altitude_msl_ft = 0;
-    //double mach = 0.3;
-    double alpha_deg = 5;
-    double throttle_norm = 1;
-    double stab_position_deg = 0;
-    //double mach = 0.5;
+    double AltitudeMeanSeaLevel_ft = atof(argv[2]);
+    double MachNumber = atof(argv[3]);
+    // Initial trim guess
+    double Alpha_deg = 5;
+    double Throttle_norm = 1;
+    double StabCommand_deg = 0;
     // Initialize Model
     Simulation Sim;
-    Sim.initial_state = Sim.model.SetAltitude(Sim.initial_state, altitude_msl_ft);
-    Sim.initial_state = Sim.model.SetMach(Sim.initial_state, mach);
-    Sim.initial_state = Sim.model.SetAlpha(Sim.initial_state, alpha_deg);
-    Sim.initial_state.Throttle_norm = throttle_norm;
-    Sim.initial_state.StabCommand_deg = stab_position_deg;
+    Sim.initial_state = Sim.model.SetAltitude(Sim.initial_state, AltitudeMeanSeaLevel_ft);
+    Sim.initial_state = Sim.model.SetMach(Sim.initial_state, MachNumber);
+    Sim.initial_state = Sim.model.SetAlpha(Sim.initial_state, Alpha_deg);
+    Sim.initial_state.Throttle_norm = Throttle_norm;
+    Sim.initial_state.StabCommand_deg = StabCommand_deg;
     // Basic 3-Dof Lon trim
     State guess = Sim.initial_state;
     bool isTrimmed = Sim.SolveTrim(Sim.initial_state, guess);
@@ -41,9 +37,9 @@ int main(int argc, char* argv[]) {
         // Aileron Doublet
         max_time = 30;
         Sim.model.inputs.AileronCommand_deg.time.push_back(1.0);
-        Sim.model.inputs.AileronCommand_deg.value.push_back(2.0);
+        Sim.model.inputs.AileronCommand_deg.value.push_back(5.0);
         Sim.model.inputs.AileronCommand_deg.time.push_back(2.0);
-        Sim.model.inputs.AileronCommand_deg.value.push_back(-2.0);
+        Sim.model.inputs.AileronCommand_deg.value.push_back(-5.0);
         Sim.model.inputs.AileronCommand_deg.time.push_back(3.0);
         Sim.model.inputs.AileronCommand_deg.value.push_back(0.0);
     }
@@ -51,9 +47,9 @@ int main(int argc, char* argv[]) {
         // Rudder Doublet
         max_time = 30;
         Sim.model.inputs.RudderCommand_deg.time.push_back(1.0);
-        Sim.model.inputs.RudderCommand_deg.value.push_back(2.0);
+        Sim.model.inputs.RudderCommand_deg.value.push_back(10.0);
         Sim.model.inputs.RudderCommand_deg.time.push_back(2.0);
-        Sim.model.inputs.RudderCommand_deg.value.push_back(-2.0);
+        Sim.model.inputs.RudderCommand_deg.value.push_back(-10.0);
         Sim.model.inputs.RudderCommand_deg.time.push_back(3.0);
         Sim.model.inputs.RudderCommand_deg.value.push_back(0.0);
     }
@@ -72,6 +68,7 @@ int main(int argc, char* argv[]) {
         // Default to this if invalid name is provided
         if (manuever_type != "LonTrim") {
             std::cout << "Unknown Manuever! Assuming LonTrim." << std::endl;
+            manuever_type = "LonTrim";
         }
         // Longitudinal Trim
 
@@ -79,31 +76,30 @@ int main(int argc, char* argv[]) {
     // Run Model
     Sim.run(max_time);
     // Output State History
-    Sim.toCSV("StateHistory.csv");
+    Sim.toCSV("output_files/" + manuever_type + ".csv");
     return 0;
 };
 
+
 // Cost function sweeps
+// Use this main to plot trim cost vs sweeps of alpha and stab command
 //int main(int argc, char* argv[]) {
 //    // Model inputs
-//    double max_time = 10;
-//    double altitude_msl_ft = 55000;
-//    double mach = 1.8;
-//    double alpha_deg = 0.25;
-//    //double mach = 0.5;
+//    double AltitudeMeanSeaLevel_ft = 55000;
+//    double MachNumber = 1.8;
+//    double Alpha_deg = 0.25;
 //    // Initialize Model
 //    Simulation Sim;
-//    Sim.initial_state = Sim.model.SetAltitude(Sim.initial_state, altitude_msl_ft);
-//    Sim.initial_state = Sim.model.SetMach(Sim.initial_state, mach);
+//    Sim.initial_state = Sim.model.SetAltitude(Sim.initial_state, AltitudeMeanSeaLevel_ft);
+//    Sim.initial_state = Sim.model.SetMach(Sim.initial_state, MachNumber);
 //    if (argc == 4) {
-//        double alpha = atof(argv[1]);
-//        double pitch = atof(argv[2]);
-//        double throttle = atof(argv[3]);
-//        std::cout << Sim.TestCost(alpha, pitch, throttle) << std::endl;
+//        double Alpha_deg = atof(argv[1]);
+//        double StabCommand_deg = atof(argv[2]);
+//        double Throttle_norm = atof(argv[3]);
+//        std::cout << Sim.TestCost(Alpha_deg, StabCommand_deg, Throttle_norm) << std::endl;
 //        return 0;
 //    }
-//
-//    std::cerr << "Usage: <exe> alpha pitch throttle" << std::endl;
+//    std::cerr << "Usage: <exe> alpha stab throttle" << std::endl;
 //    return 1;
 //}
 

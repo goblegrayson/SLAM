@@ -12,21 +12,21 @@ State Model::GetDefaultInitialState() {
 	return State();
 };
 
-State Model::SetAltitude(State state, double altitude_msl_ft) {
+State Model::SetAltitude(State state, double AltitudeMeanSeaLevel_ft) {
 	// Set the altitude
-	state.AltitudeMeanSeaLevel_ft = altitude_msl_ft;
+	state.AltitudeMeanSeaLevel_ft = AltitudeMeanSeaLevel_ft;
 	// Update the atmospherics
 	state = Atmosphere(state);
 	// Output
 	return state;
 };
 
-State Model::SetMach(State state, double mach) {
+State Model::SetMach(State state, double MachNumber) {
 	// Update true airspeed
 	double AltitudeMeanSeaLevel_m = state.AltitudeMeanSeaLevel_ft / 3.281;
 	double AirTemperature_k = atmosphere.Temperature(AltitudeMeanSeaLevel_m);
 	double SpeedOfSound_fps = atmosphere.SpeedofSound(AirTemperature_k) * 3.281; // m/s to ft/s
-	state.TrueAirspeed_fps = SpeedOfSound_fps * mach;
+	state.TrueAirspeed_fps = SpeedOfSound_fps * MachNumber;
 	// Propegate states
 	double alpha_rad = state.Alpha_deg * M_PI / 180.0;
 	double beta_rad = state.Beta_deg * M_PI / 180.0;

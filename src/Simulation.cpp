@@ -187,8 +187,8 @@ void Simulation::toCSV(const std::string& filename) {
     }
 
     file.close();
-    std::cout << "Complete state history (" << state_history.size()
-              << " records) written to " << filename << std::endl;
+    std::cout << "State history (" << state_history.size()
+              << " frames) written to: " << filename << std::endl;
 } // Thanks Claude :)
 
 // Trim methods
@@ -294,11 +294,11 @@ bool Simulation::SolveTrim(const State& initialState, State& trimGuess) {
 
 
 // At the bottom of Simulation.cpp
-double Simulation::TestCost(double alpha, double pitch, double throttle) {
+double Simulation::TestCost(double Alpha_deg, double StabCommand_deg, double Throttle_norm) {
     State guess = initial_state;
-    guess.Alpha_deg = alpha;
-    guess.StabCommand_deg = pitch;
-    guess.Throttle_norm = throttle;
+    guess.Alpha_deg = Alpha_deg;
+    guess.StabCommand_deg = StabCommand_deg;
+    guess.Throttle_norm = Throttle_norm;
     State result = TrimResiduals(initial_state, guess);
     return CalcCost(result);
 }
