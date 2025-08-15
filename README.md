@@ -1,5 +1,5 @@
-# Simple Linear Aircraft Model (SLAM)
-SLAM is a demonstrative 6 degree-of-freedom airplane flight simulation based loosely on the Lockheed F-104 Starfighter and implemented in object-oriented C++. Simulation results are output in CSV format and plotted using the included Python utility scripts.
+# Simple Low-Latency Aircraft Model (SLAM)
+SLAM is a demonstrative 6 degree-of-freedom airplane flight simulation implemented in object-oriented C++. It is based loosely on the Lockheed F-104 Starfighter and provides highly performant trim and time-history analysis. Simulation results are output in CSV format and plotted using the included Python utility scripts.
 
 ## Model Structure
 SLAM is implemented in C++ using an object-oriented philosophy. It consists of the following object structure:
@@ -14,7 +14,7 @@ SLAM is implemented in C++ using an object-oriented philosophy. It consists of t
   - Allows for easy lookup of atmospherics from the 1976 Standard Atmosphere tables.
 
 ## Physical and Aerodynamic Modeling Philosophy
-Atmospherics in SLAM are calculated using an implementation of the 1976 Standard Atmosphere (Yager, 2013). Aerodynamic coefficients and derivatives are linear and invariant (hence the "L" in SLAM) and were scavenged from class notes, textbooks, and internet sources. 
+Atmospherics in SLAM are calculated using an implementation of the 1976 Standard Atmosphere (Yager, 2013). Aerodynamic coefficients and derivatives are currently linear and invariant and were scavenged from class notes, textbooks, and internet sources. 
 Equations of motion are simplified assuming the aircraft body axes align with the principal axes of the aircraft and are integrated using Euler integration.
 
 ## Usage
