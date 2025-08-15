@@ -15,7 +15,7 @@ pretty_types = ['Longitudinal Trim', 'Stabilator Doublet', 'Aileron Doublet', 'R
 # Run simulations via SLAM.exe
 base_path = Path(__file__).absolute().parent
 state_paths = [base_path.joinpath('output_files', maneuver_type + '.csv') for maneuver_type in maneuver_types]
-exe_path = r"D:\Data\SLAM\x64\Debug\SLAM.exe"
+exe_path = r"D:\Data\SLAM\x64\Release\SLAM.exe"
 [subprocess.run([exe_path, maneuver_type, str(AltitudeMeanSeaLevel_ft), str(MachNumber)], check=True) for i, maneuver_type in enumerate(maneuver_types) if not state_paths[i].exists()]
 
 # Set up up plots

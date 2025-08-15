@@ -1,8 +1,42 @@
-// SLAM.cpp : This file contains the 'main' function. Program execution begins and ends there.
+/******************************************************************************
+ * @file    main.cpp
+ * @brief   Entry point for the SLAM (Simple Linear Aircraft Model) simulation.
+ *
+ * This program initializes the Simulation object, sets model initial conditions
+ * from command-line arguments, and executes predefined flight maneuvers or
+ * longitudinal trim runs. Results are written to CSV output files for further
+ * analysis and plotting.
+ *
+ * Usage:
+ *     ./slam <ManeuverType> <Altitude_ft> <MachNumber>
+ *
+ * Example:
+ *     ./slam LonTrim 55000 1.8
+ *
+ * Maneuver Types:
+ *     LonTrim          - Longitudinal trim only (default if invalid)
+ *     AileronDoublet   - Aileron input doublet maneuver
+ *     RudderDoublet    - Rudder input doublet maneuver
+ *     StabDoublet      - Stabilator input doublet maneuver
+ *
+ * @note   Requires valid numeric altitude (ft) and Mach number inputs.
+ * @note   Output CSV files are saved to the "output_files/" directory.
+ *
+ * @date    2025-08-15
+ * @version 1.0
+ * @author  Grayson Goble
+ ******************************************************************************/
 
 #include "main.h"
 
+
 int main(int argc, char* argv[]) {
+    // Input checking
+    if (argc < 4) {
+        std::cerr << "Usage: " << argv[0]
+            << " <ManeuverType> <Altitude_ft> <MachNumber>" << std::endl;
+        return 1;
+    }
     // Model initial conditions
     std::string manuever_type = argv[1];
     double AltitudeMeanSeaLevel_ft = atof(argv[2]);
@@ -13,9 +47,9 @@ int main(int argc, char* argv[]) {
     double StabCommand_deg = 0;
     // Initialize Model
     Simulation Sim;
-    Sim.initial_state = Sim.model.SetAltitude(Sim.initial_state, AltitudeMeanSeaLevel_ft);
-    Sim.initial_state = Sim.model.SetMach(Sim.initial_state, MachNumber);
-    Sim.initial_state = Sim.model.SetAlpha(Sim.initial_state, Alpha_deg);
+    Sim.model.SetAltitude(Sim.initial_state, AltitudeMeanSeaLevel_ft);
+    Sim.model.SetMach(Sim.initial_state, MachNumber);
+    Sim.model.SetAlpha(Sim.initial_state, Alpha_deg);
     Sim.initial_state.Throttle_norm = Throttle_norm;
     Sim.initial_state.StabCommand_deg = StabCommand_deg;
     // Basic 3-Dof Lon trim
@@ -71,7 +105,7 @@ int main(int argc, char* argv[]) {
             manuever_type = "LonTrim";
         }
         // Longitudinal Trim
-
+        // No inputs, just fly trimmed
     }
     // Run Model
     Sim.run(max_time);
@@ -102,24 +136,3 @@ int main(int argc, char* argv[]) {
 //    std::cerr << "Usage: <exe> alpha stab throttle" << std::endl;
 //    return 1;
 //}
-
-
-
-
-
-
-
-
-
-
-
-// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
-// Debug program: F5 or Debug > Start Debugging menu
-
-// Tips for Getting Started: 
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file

@@ -16,8 +16,8 @@ void Simulation::run(double max_time) {
     // Ensure integration is on 
     state.Integrate = true;
     // Set up state history
-	state_history.resize(n_frames);
-	state_history[0] = state;
+	state_history.reserve(n_frames);
+	state_history.push_back(state);
     // Input counters
     int i_stab = 0;
     int i_ail = 0;
@@ -40,9 +40,9 @@ void Simulation::run(double max_time) {
             i_rud = std::min(i_rud + 1, int(model.inputs.RudderCommand_deg.time.size()) - 1);
         }
 		// Run time step
-		state = model.Step(state);
+		model.Step(state);
 		// Store state in state_history vector
-		state_history[i_frame] = state;
+		state_history.push_back(state);
 		// Print time
 		//std::cout << state_history[i_frame].Time_sec << std::endl;
 	};
@@ -125,8 +125,8 @@ void Simulation::toCSV(const std::string& filename) {
             s.Time_sec << ","
 
             // Reference Parameters
-            << s.ReferenceWingArea_ft2 << "," << s.ReferenceChord_ft << "," << s.ReferenceSpan_ft << ","
-            << s.SpeedOfSound_SeaLevel_fps << "," << s.StaticPressure_SeaLevel_psf << "," << s.ThrustLimit_lbs << ","
+            << ReferenceWingArea_ft2 << "," << ReferenceChord_ft << "," << ReferenceSpan_ft << ","
+            << SpeedOfSound_SeaLevel_fps << "," << StaticPressure_SeaLevel_psf << "," << ThrustLimit_lbs << ","
 
             // Controls
             << s.StabCommand_deg << "," << s.AileronCommand_deg << "," << s.RudderCommand_deg << "," << s.Throttle_norm << ","
@@ -139,7 +139,7 @@ void Simulation::toCSV(const std::string& filename) {
             // Environment
             << s.AltitudeMeanSeaLevel_ft << "," << s.MachNumber << ","
             << s.TrueAirspeed_fps << "," << s.TrueAirspeed_kt << "," << s.EquivilantAirspeed_fps << "," << s.EquivilantAirspeed_kt << ","
-            << s.AccelGravity_fts2 << "," << s.SpeedOfSound_kt << "," << s.SpeedOfSound_fps << ","
+            << AccelGravity_fts2 << "," << s.SpeedOfSound_kt << "," << s.SpeedOfSound_fps << ","
             << s.AirTemperature_r << "," << s.AirDensity_slugft3 << ","
             << s.StaticPressure_psf << "," << s.DynamicPressure_psf << "," << s.TotalPressure_psf << ","
 
@@ -195,11 +195,11 @@ void Simulation::toCSV(const std::string& filename) {
 State Simulation::TrimResiduals(const State& base, const State& inputs) {
     // Set inputs
     State state = base;
-    state = model.SetAlpha(state, inputs.Alpha_deg);
+    model.SetAlpha(state, inputs.Alpha_deg);
     state.StabCommand_deg = inputs.StabCommand_deg;
     state.Throttle_norm = inputs.Throttle_norm;
     // Run Step
-    state = model.Step(state);
+    model.Step(state);
     return state;
 }
 
@@ -217,7 +217,7 @@ bool Simulation::SolveTrim(const State& initialState, State& trimGuess) {
     // Trim Settings
     int n_states = 3;
     const double tol = 1e-3;
-    const int maxIters = 1e6;
+    const int maxIters = int(1e6);
     std::vector<double> stepSize = { 1e-3, 1e-4, 1e-3 };
     const double fdEpsilon = 1e-3;
     const double maxGrad = 1e5;

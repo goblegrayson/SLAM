@@ -1,20 +1,33 @@
 #pragma once
 #define _USE_MATH_DEFINES
 #include <cmath>
+#include <math.h>
 #include "USSA.h"
 #include <algorithm>
 #include <vector>
 
+
+// Reference Constants
+constexpr double ReferenceWingArea_ft2 = 196.1;
+constexpr double ReferenceChord_ft = 9.55;
+constexpr double ReferenceSpan_ft = 21.94;
+constexpr double SpeedOfSound_SeaLevel_fps = 661.47 * 1.688;
+constexpr double StaticPressure_SeaLevel_psf = 2116.23;
+constexpr double ThrustLimit_lbs = 15600;
+constexpr double AccelGravity_fts2 = 32.174;
+
+// Conversion Constants
+constexpr double FT_TO_M = 1.0 / 3.281;
+constexpr double DEG_TO_RAD = M_PI / 180.0;
+constexpr double RAD_TO_DEG = 180 / M_PI;
+constexpr double K_TO_R = 1.8;
+constexpr double PA_TO_PSF = 0.020885;
+constexpr double SLUGFT3_TO_KGM3 = 515.4;
+constexpr double KT_TO_FTS = 1.688;
+
 struct State {
 	// Sim Settings
 	bool Integrate = false;
-	// Reference Parameters
-	double ReferenceWingArea_ft2 = 196.1;
-	double ReferenceChord_ft = 9.55;
-	double ReferenceSpan_ft = 21.94;
-	double SpeedOfSound_SeaLevel_fps = 661.47 * 1.688;
-	double StaticPressure_SeaLevel_psf = 2116.23 ;
-	double ThrustLimit_lbs = 15600;
 	// Controls
 	double StabCommand_deg = 0;
 	double AileronCommand_deg = 0;
@@ -35,7 +48,6 @@ struct State {
 	double TrueAirspeed_kt = 0;
 	double EquivilantAirspeed_fps = 0;
 	double EquivilantAirspeed_kt = 0;
-	double AccelGravity_fts2 = 32.2;
 	double SpeedOfSound_kt = 0;
 	double SpeedOfSound_fps = 0;
 	double AirTemperature_r = 0; // Rankine
@@ -157,17 +169,17 @@ class Model{
 		// Model Methods
 		Model();
 		State GetDefaultInitialState();
-		State SetAltitude(State state, double altitude_msl_ft);
-		State SetMach(State state, double mach);
-		State SetAlpha(State state, double alpha_deg);
-		State Step(State state);
+		void SetAltitude(State& state, double altitude_msl_ft);
+		void SetMach(State& state, double mach);
+		void SetAlpha(State& state, double alpha_deg);
+		void Step(State& state);
 		// Component Models
-		State Atmosphere(State state);
-		State AeroAngles(State state);
-		State LonAero(State state);
-		State LatDirAero(State state);
-		State Propulsion(State state);
-		State EquationsOfMotion(State state);
-		State Integration(State state);
+		void Atmosphere(State& state);
+		void AeroAngles(State& state);
+		void LonAero(State& state);
+		void LatDirAero(State& state);
+		void Propulsion(State& state);
+		void EquationsOfMotion(State& state);
+		void Integration(State& state);
 };
 
