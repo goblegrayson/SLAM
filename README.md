@@ -14,12 +14,12 @@ SLAM is implemented in C++ using an object-oriented philosophy. It consists of t
   - Allows for easy lookup of atmospherics from the 1976 Standard Atmosphere tables.
 
 ## Physical and Aerodynamic Modeling Philosophy
-Atmospherics in SLAM are calculated using an implementation of the 1976 Standard Atmosphere (Yager, 2013). Aerodynamic coefficients are linear and invariant (hence the "L" in SLAM) and were scavenged from class notes, textbooks, and internet sources. 
+Atmospherics in SLAM are calculated using an implementation of the 1976 Standard Atmosphere (Yager, 2013). Aerodynamic coefficients and derivatives are linear and invariant (hence the "L" in SLAM) and were scavenged from class notes, textbooks, and internet sources. 
 Equations of motion are simplified assuming the aircraft body axes align with the principal axes of the aircraft and are integrated using Euler integration.
 
 ## Usage
 Once built, SLAM can be called from the command line using the following signature:
-SLAM.exe \[Maneuver Type\] \[Altitude Above MSL (ft)\] \[Mach Number\]
+`SLAM.exe [Maneuver Type] [Altitude Above MSL (ft)] [Mach Number]`
 
 Maneuver type should be one of the following current options:
 - LonTrim
@@ -42,7 +42,17 @@ Plotting can be accomplished in the included `plot_maneuvers.py` using Pandas, a
 - Polymorphism of the model class could allow the Simulation class to operate using different models.
 
 ## Example Results
-![Basic Longitudinal Trim](https://github.com/goblegrayson/SLAM/blob/main/output_files/LonTrim_Plot.png)
-![Stabilator Doublet](https://github.com/goblegrayson/SLAM/blob/main/output_files/StabDoublet_Plot.png)
-![Aileron Doublet](https://github.com/goblegrayson/SLAM/blob/main/output_files/AileronDoublet_Plot.png)
-![Rudder Doublet](https://github.com/goblegrayson/SLAM/blob/main/output_files/RudderDoublet_Plot.png)
+![Basic Longitudinal Trim](https://github.com/goblegrayson/SLAM/blob/main/output_files/LonTrim_Plot.png?raw=true)
+
+![Stabilator Doublet](https://github.com/goblegrayson/SLAM/blob/main/output_files/StabDoublet_Plot.png?raw=true)
+
+![Aileron Doublet](https://github.com/goblegrayson/SLAM/blob/main/output_files/AileronDoublet_Plot.png?raw=true)
+
+![Rudder Doublet](https://github.com/goblegrayson/SLAM/blob/main/output_files/RudderDoublet_Plot.png?raw=true)
+
+## Bibliography
+Hieser, Gerald, and Charles F Reid. “A Transonic Wind-Tunnel Investigation of the Longitudinal Aerodynamic Characteristics of a Model of the Lockheed XF-104 Airplane.” Nasa.gov, 1954, ntrs.nasa.gov/citations/20090023314. Accessed 4 Aug. 2025.
+
+Nelson, Robert C. Flight Stability and Automatic Control. Boston, Mass., Mcgraw Hill, 1998.
+
+Yager, Robert. Calculating Atmospheric Conditions (Temperature, Pressure, Air Density, and Speed of Sound) Using C++. 2013.
